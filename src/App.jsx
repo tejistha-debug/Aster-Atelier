@@ -536,8 +536,11 @@ function ServicesPage() {
       </div>
    );
 }
+import {
+  CLOUD_NAME,
+  UPLOAD_PRESET,
+} from "./cloudinary";
 function PortfolioPage() {
-
   const [showAdmin, setShowAdmin] = useState(false);
   const [adminUnlocked, setAdminUnlocked] = useState(
   localStorage.getItem("adminUnlocked") === "true"
@@ -958,21 +961,55 @@ function AdminPanel({
             <input
               type="file"
               accept="application/pdf"
-              onChange={(e) => {
+              onChange={async (e) => {
 
-                const uploadedFile =
-                  e.target.files[0];
+  const uploadedFile =
+    e.target.files[0];
 
-                if (uploadedFile) {
+  if (!uploadedFile) return;
 
-                  const fileURL =
-                    URL.createObjectURL(
-                      uploadedFile
-                    );
+  const formData =
+    new FormData();
 
-                  setFile(fileURL);
-                }
-              }}
+  formData.append(
+    "file",
+    uploadedFile
+  );
+
+  formData.append(
+    "upload_preset",
+    UPLOAD_PRESET
+  );
+
+  try {
+
+    const response =
+      await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+    const data =
+      await response.json();
+
+    console.log(data);
+
+    setFile(
+      data.secure_url
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "PDF upload failed"
+    );
+  }
+}}
               className="
                 w-full
                 p-3
