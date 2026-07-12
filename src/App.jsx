@@ -780,7 +780,7 @@ function AdminPanel({
 
   const addProject = () => {
 
-    if (!title || !description || !file || !thumbnail)
+    if (!title || !description || !file)
       return;
 
     const projectData = {
@@ -793,7 +793,6 @@ function AdminPanel({
     let updatedProjects;
 
     if (editingProject) {
-
       updatedProjects = [...projects];
 
       updatedProjects[editingProject.index] =
@@ -957,96 +956,75 @@ function AdminPanel({
               "
             />
 
-            {/* PDF */}
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={async (e) => {
+           {/* PDF */}
+<input
+  type="file"
+  accept="application/pdf"
+  onChange={async (e) => {
 
-  const uploadedFile =
-    e.target.files[0];
+    const uploadedFile =
+      e.target.files[0];
 
-  if (!uploadedFile) return;
+    if (!uploadedFile) return;
 
-  const formData =
-    new FormData();
+    const formData =
+      new FormData();
 
-  formData.append(
-    "file",
-    uploadedFile
-  );
+    formData.append(
+      "file",
+      uploadedFile
+    );
 
-  formData.append(
-    "upload_preset",
-    UPLOAD_PRESET
-  );
+    formData.append(
+      "upload_preset",
+      UPLOAD_PRESET
+    );
 
-  try {
+    try {
 
-    const response =
-      await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
+      const response =
+        await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+      const data =
+  await response.json();
+
+console.log(data);
+
+const pdfURL =
+  data.secure_url;
+
+setFile(pdfURL);
+
+const thumbnailURL =
+  `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/pg_1/${data.public_id}.jpg`;
+
+setThumbnail(thumbnailURL);
+
+      // AUTOMATIC FIRST PAGE THUMBNAIL
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        "PDF upload failed"
       );
-
-    const data =
-      await response.json();
-
-    console.log(data);
-
-    setFile(
-      data.secure_url
-    );
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "PDF upload failed"
-    );
-  }
-}}
-              className="
-                w-full
-                p-3
-                rounded-lg
-                border
-                bg-white
-              "
-            />
-
-            {/* THUMBNAIL */}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-
-                const uploadedImage =
-                  e.target.files[0];
-
-                if (uploadedImage) {
-
-                  const imageURL =
-                    URL.createObjectURL(
-                      uploadedImage
-                    );
-
-                  setThumbnail(imageURL);
-                }
-              }}
-              className="
-                w-full
-                p-3
-                rounded-lg
-                border
-                bg-white
-              "
-            />
-
+    }
+  }}
+  className="
+    w-full
+    p-3
+    rounded-lg
+    border
+    bg-white
+  "
+/>
             {/* SAVE */}
             <button
               onClick={addProject}
