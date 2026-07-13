@@ -1,3 +1,13 @@
+import {
+  collection,
+  getDocs,
+  addDoc
+} from "firebase/firestore";
+import { db } from "./firebase";
+import {
+  collection,
+  getDocs
+} from "firebase/firestore";
 import servicesBg from "./assets/services-bg.png";
 import architectureBg from "./assets/architecture-bg.jpg";
 import { useState, useEffect } from "react";
@@ -546,14 +556,26 @@ function PortfolioPage() {
   localStorage.getItem("adminUnlocked") === "true"
 );
 
-  const [projects, setProjects] = useState(() => {
-    const saved = localStorage.getItem("projects");
+  const [projects, setProjects] = useState([]);
 
-    return saved
-      ? JSON.parse(saved)
-      : [];
-  });
+useEffect(() => {
+  const loadProjects = async () => {
+    const snapshot =
+      await getDocs(
+        collection(db, "projects")
+      );
 
+    const data =
+      snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+    setProjects(data);
+  };
+
+  loadProjects();
+}, []);
   return (
     <div className="max-w-6xl w-full relative mx-auto">
 
@@ -663,10 +685,7 @@ function PortfolioPage() {
 
           localStorage.setItem(
             "editingProject",
-            JSON.stringify({
-              ...project,
-              index,
-            })
+            JSON.stringify(project)
           );
         }}
         className="
@@ -699,10 +718,20 @@ function PortfolioPage() {
 
           if (!confirmed) return;
 
-          const updatedProjects =
-            projects.filter((_, i) => i !== index);
+          await deleteDoc(
+  doc(
+    db,
+    "projects",
+    project.id
+  )
+);
 
-          setProjects(updatedProjects);
+setProjects(
+  projects.filter(
+    (p) =>
+      p.id !== project.id
+  )
+);
 
           localStorage.setItem(
             "projects",
@@ -778,42 +807,65 @@ function AdminPanel({
     editingProject?.thumbnail || ""
   );
 
-  const addProject = () => {
+ const addProject = async () => {
 
-    if (!title || !description || !file)
-      return;
+  if (!title || !description || !file)
+    return;
 
-    const projectData = {
-      title,
-      description,
-      file,
-      thumbnail,
-    };
+  const projectData = {
+    title,
+    description,
+    file,
+    thumbnail,
+  };
 
-    let updatedProjects;
+  try {
 
-    if (editingProject) {
-      updatedProjects = [...projects];
+    if (editingProject?.id) {
 
-      updatedProjects[editingProject.index] =
-        projectData;
+      await updateDoc(
+        doc(
+          db,
+          "projects",
+          editingProject.id
+        ),
+        projectData
+      );
+
+      setProjects(
+        projects.map((p) =>
+          p.id === editingProject.id
+            ? {
+                ...projectData,
+                id: p.id,
+              }
+            : p
+        )
+      );
 
     } else {
 
-      updatedProjects = [
+      const newDoc =
+        await addDoc(
+          collection(
+            db,
+            "projects"
+          ),
+          projectData
+        );
+
+      setProjects([
         ...projects,
-        projectData,
-      ];
+        {
+          id: newDoc.id,
+          ...projectData,
+        },
+      ]);
     }
 
-    setProjects(updatedProjects);
-
-    localStorage.setItem(
-      "projects",
-      JSON.stringify(updatedProjects)
+    localStorage.removeItem(
+      "editingProject"
     );
-
-    localStorage.removeItem("editingProject");
 
     setTitle("");
     setDescription("");
@@ -821,7 +873,16 @@ function AdminPanel({
     setThumbnail("");
 
     onClose();
-  };
+
+  } catch (err) {
+
+    console.log(err);
+
+    alert(
+      "Could not save project."
+    );
+  }
+};
 
   return (
     <div className="
