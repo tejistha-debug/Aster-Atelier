@@ -1,17 +1,17 @@
 import {
   collection,
   getDocs,
-  addDoc
+  addDoc,
+  deleteDoc,
+  doc,
+  setDoc
 } from "firebase/firestore";
+
 import { db } from "./firebase";
-import {
-  collection,
-  getDocs
-} from "firebase/firestore";
+
 import servicesBg from "./assets/services-bg.png";
 import architectureBg from "./assets/architecture-bg.jpg";
 import { useState, useEffect } from "react";
-
 export default function App() {
   const [entered, setEntered] = useState(false);
   const [page, setPage] = useState(0);
@@ -701,53 +701,48 @@ useEffect(() => {
 
       {/* DELETE */}
       <button
-        onClick={() => {
+  onClick={async () => {
 
-          const adminPassword =
-            prompt("Enter admin password");
+    const adminPassword =
+      prompt("Enter admin password");
 
-          if (adminPassword !== "tsstudio123") {
-            alert("Access denied");
-            return;
-          }
+    if (adminPassword !== "tsstudio123") {
+      alert("Access denied");
+      return;
+    }
 
-          const confirmed =
-            window.confirm(
-              "Delete this project?"
-            );
+    const confirmed =
+      window.confirm(
+        "Delete this project?"
+      );
 
-          if (!confirmed) return;
+    if (!confirmed) return;
 
-          await deleteDoc(
-  doc(
-    db,
-    "projects",
-    project.id
-  )
-);
+    await deleteDoc(
+      doc(
+        db,
+        "projects",
+        project.id
+      )
+    );
 
-setProjects(
-  projects.filter(
-    (p) =>
-      p.id !== project.id
-  )
-);
+    setProjects(
+      projects.filter(
+        (p) => p.id !== project.id
+      )
+    );
 
-          localStorage.setItem(
-            "projects",
-            JSON.stringify(updatedProjects)
-          );
-        }}
-        className="
-          bg-[#111921]
-          text-white
-          px-5
-          py-2
-          rounded-lg
-        "
-      >
-        Delete
-      </button>
+  }}
+  className="
+    bg-[#111921]
+    text-white
+    px-5
+    py-2
+    rounded-lg
+  "
+>
+  Delete
+</button>
 
     </>
 
