@@ -1020,66 +1020,50 @@ function AdminPanel({
 <input
   type="file"
   accept=".pdf,video/mp4,video/webm,video/quicktime"
- onChange={async (e) => {
+onChange={async (e) => {
   try {
-
-    const uploadedFile =
-      e.target.files[0];
+    const uploadedFile = e.target.files[0];
 
     if (!uploadedFile) return;
 
-    const formData =
-      new FormData();
+    const formData = new FormData();
 
-    formData.append(
-      "file",
-      uploadedFile
-    );
-
+    formData.append("file", uploadedFile);
     formData.append(
       "upload_preset",
       UPLOAD_PRESET
     );
 
     let endpoint;
-    let thumbnailURL;
 
     if (
       uploadedFile.type ===
       "application/pdf"
     ) {
-
       endpoint = "raw/upload";
-
-    } else if (
+    }
+    else if (
       uploadedFile.type.startsWith(
         "video"
       )
     ) {
-
-      endpoint =
-        "video/upload";
-
-    } else {
-
-      alert(
-        "Unsupported file"
-      );
-
+      endpoint = "video/upload";
+    }
+    else {
+      alert("Unsupported file");
       return;
     }
 
     console.log(
+      "TYPE:",
       uploadedFile.type
     );
 
     console.log(
+      "ENDPOINT:",
       endpoint
     );
 
-    console.log("TYPE:", uploadedFile.type);
-console.log("ENDPOINT:", endpoint);
-console.log("DATA:", data);
     const response =
       await fetch(
         `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${endpoint}`,
@@ -1092,7 +1076,10 @@ console.log("DATA:", data);
     const data =
       await response.json();
 
-    console.log(data);
+    console.log(
+      "DATA:",
+      data
+    );
 
     if (data.error) {
       throw new Error(
@@ -1104,33 +1091,27 @@ console.log("DATA:", data);
       data.secure_url
     );
 
+    let thumbnailURL;
+
     if (
       uploadedFile.type ===
       "application/pdf"
     ) {
-
       thumbnailURL =
         `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/pg_1/${data.public_id}.jpg`;
-
-    } else {
-
+    }
+    else {
       thumbnailURL =
         `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/so_0/${data.public_id}.jpg`;
-
     }
 
     setThumbnail(
       thumbnailURL
     );
-
-  } catch (err) {
-
+  }
+  catch (err) {
     console.error(err);
-
-    alert(
-      "Upload failed"
-    );
-
+    alert(err.message);
   }
 }}
   className="
