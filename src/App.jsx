@@ -808,11 +808,15 @@ function AdminPanel({
     return;
 
   const projectData = {
-    title,
-    description,
-    file,
-    thumbnail,
-  };
+  title,
+  description,
+  file,
+  thumbnail,
+  type:
+    file.includes(".mp4")
+      ? "video"
+      : "pdf"
+};
 
   try {
 
@@ -1015,8 +1019,9 @@ function AdminPanel({
            {/* PDF */}
 <input
   type="file"
-  accept="application/pdf"
-  onChange={async (e) => {
+  accept=".pdf,video/mp4,video/webm,video/quicktime"
+ onChange={async (e) => {
+  try {
 
     const uploadedFile =
       e.target.files[0];
@@ -1036,43 +1041,98 @@ function AdminPanel({
       UPLOAD_PRESET
     );
 
-    try {
+    let endpoint;
+    let thumbnailURL;
 
-      const response =
-        await fetch(
-          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
+    if (
+      uploadedFile.type ===
+      "application/pdf"
+    ) {
 
-      const data =
-  await response.json();
+      endpoint = "raw/upload";
 
-console.log(data);
+    } else if (
+      uploadedFile.type.startsWith(
+        "video"
+      )
+    ) {
 
-const pdfURL =
-  data.secure_url;
+      endpoint =
+        "video/upload";
 
-setFile(pdfURL);
-
-const thumbnailURL =
-  `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/pg_1/${data.public_id}.jpg`;
-
-setThumbnail(thumbnailURL);
-
-      // AUTOMATIC FIRST PAGE THUMBNAIL
-
-    } catch (err) {
-
-      console.error(err);
+    } else {
 
       alert(
-        "PDF upload failed"
+        "Unsupported file"
+      );
+
+      return;
+    }
+
+    console.log(
+      uploadedFile.type
+    );
+
+    console.log(
+      endpoint
+    );
+
+    console.log("TYPE:", uploadedFile.type);
+console.log("ENDPOINT:", endpoint);
+console.log("DATA:", data);
+    const response =
+      await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${endpoint}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+    const data =
+      await response.json();
+
+    console.log(data);
+
+    if (data.error) {
+      throw new Error(
+        data.error.message
       );
     }
-  }}
+
+    setFile(
+      data.secure_url
+    );
+
+    if (
+      uploadedFile.type ===
+      "application/pdf"
+    ) {
+
+      thumbnailURL =
+        `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/pg_1/${data.public_id}.jpg`;
+
+    } else {
+
+      thumbnailURL =
+        `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/so_0/${data.public_id}.jpg`;
+
+    }
+
+    setThumbnail(
+      thumbnailURL
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Upload failed"
+    );
+
+  }
+}}
   className="
     w-full
     p-3
